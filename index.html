@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Agenda | Isadora Berger Nails</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+
+<style>
+:root{
+  --nude:#f3e9e3;
+  --rose:#e8cfc7;
+  --gold:#c9a24d;
+  --text:#2b2b2b;
+  --success:#2e7d32;
+  --busy-red:#ff6b6b;
+}
+
+*{
+  box-sizing:border-box;
+  font-family:'Inter', sans-serif;
+}
+
+body{
+  background:#fff;
+  margin:0;
+  padding:20px;
+  color:var(--text);
+}
+
+.app{
+  max-width:420px;
+  margin:auto;
+}
+
+.header{
+  text-align:center;
+}
+
+.header img{
+  width:110px;
+  height:110px;
+  border-radius:50%;
+  object-fit:cover;
+  border:3px solid var(--rose);
+}
+
+.header h1{
+  font-family:'Playfair Display', serif;
+  font-size:22px;
+  margin:12px 0 4px;
+}
+
+.header p{
+  font-size:14px;
+  color:#777;
+}
+
+.card{
+  background:#fff;
+  border-radius:20px;
+  padding:18px;
+  margin-top:20px;
+  box-shadow:0 10px 30px rgba(0,0,0,0.05);
+}
+
+.card h2{
+  font-size:16px;
+  margin-bottom:12px;
+}
+
+.services button{
+  width:100%;
+  padding:14px;
+  border-radius:14px;
+  border:1px solid var(--rose);
+  background:#fff;
+  margin-bottom:10px;
+  font-size:15px;
+  cursor:pointer;
+}
+
+.services button.active{
+  background:var(--nude);
+  border-color:var(--gold);
+}
+
+input[type="date"]{
+  width:100%;
+  padding:14px;
+  border-radius:14px;
+  border:1px solid var(--rose);
+  font-size:15px;
+}
+
+.hours{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:10px;
+  margin-top:12px;
+}
+
+.hour{
+  padding:10px;
+  text-align:center;
+  border-radius:12px;
+  font-size:14px;
+  cursor:pointer;
+  background:#e6f3ea;
+  color:#1e7f4d;
+  transition: all 0.2s;
+}
+
+.hour.busy{
+  background:var(--busy-red) !important;
+  color:white !important;
+  cursor:not-allowed !important;
+  opacity:0.8;
+}
+
+.hour.busy::after{
+  content: "🔒";
+  display: block;
+  font-size:12px;
+  margin-top:2px;
+}
+
+.hour.active{
+  background:var(--gold);
+  color:#fff;
+}
+
+.confirm-btn{
+  margin-top:20px;
+  background:var(--gold);
+  color:#fff;
+  text-align:center;
+  padding:16px;
+  border-radius:18px;
+  font-size:16px;
+  text-decoration:none;
+  display:block;
+  border:none;
+  cursor:pointer;
+  transition: opacity 0.3s;
+}
+
+.confirm-btn:disabled{
+  opacity:0.6;
+  cursor:not-allowed;
+}
+
+.success-message{
+  margin-top:20px;
+  padding:16px;
+  background:rgba(46,125,50,0.1);
+  border-radius:16px;
+  color:var(--success);
+  text-align:center;
+  display:none;
+}
+</style>
+</head>
+
+<body>
+<div class="app">
+
+  <div class="header">
+    <img src="https://i.postimg.cc/0QmsyzCH/807b9ccc-1a3b-41e7-b791-b5416ac9f2e7.jpg" alt="Isadora Berger">
+    <h1>Isadora Berger</h1>
+    <p>Nail Designer • Palhoça/SC</p>
+  </div>
+
+  <div class="card services">
+    <h2>Escolha o serviço</h2>
+    <button onclick="selectService(this,'Fibra de vidro', 2.5)">💅 Fibra de vidro (2h30)</button>
+    <button onclick="selectService(this,'Esmaltação em gel', 1)">✨ Esmaltação em gel (1h)</button>
+    <button onclick="selectService(this,'Banho de gel', 1.5)">💎 Banho de gel (1h30)</button>
+  </div>
+
+  <div class="card">
+    <h2>Escolha a data</h2>
+    <input type="date" id="date">
+  </div>
+
+  <div class="card">
+    <h2>Horários disponíveis</h2>
+    <div class="hours" id="hours"></div>
+  </div>
+
+  <button id="confirmBtn" class="confirm-btn" onclick="confirmBooking()" disabled>
+    Confirmar Agendamento
+  </button>
+
+  <div id="successMessage" class="success-message">
+    ✅ Agendamento confirmado!<br>
+    Você receberá uma confirmação em breve.
+  </div>
+
+</div>
+
+<script>
+let selectedService = "";
+let selectedDuration = 0;
+let selectedDate = "";
+let selectedHour = "";
+
+const hoursContainer = document.getElementById("hours");
+const dateInput = document.getElementById("date");
+const confirmBtn = document.getElementById("confirmBtn");
+
+const today = new Date();
+const yyyy = today.getFullYear();
+let mm = today.getMonth() + 1;
+let dd = today.getDate();
+
+if (dd < 10) dd = '0' + dd;
+if (mm < 10) mm = '0' + mm;
+
+const todayFormatted = yyyy + '-' + mm + '-' + dd;
+dateInput.min = todayFormatted;
+dateInput.max = new Date(today.getTime() + 30*24*60*60*1000).toISOString().split('T')[0];
+
+const allHours = ["08:00","09:00","10:00","11:00","13:00","14:00","15:00","16:00"];
+
+const busySlots = {
+  "2025-01-15": ["09:00", "10:00", "14:00"],
+  "2025-01-16": ["08:00", "09:00", "15:00"]
+};
+
+function selectService(btn, service, duration){
+  document.querySelectorAll(".services button").forEach(b=>b.classList.remove("active"));
+  btn.classList.add("active");
+  selectedService = service;
+  selectedDuration = duration;
+  renderHours();
+}
+
+function getSlotsToBlock(startTime, duration) {
+  const slots = [];
+  const [startHour, startMin] = startTime.split(':').map(Number);
+  let totalMinutes = startHour * 60 + startMin;
+  const durationMinutes = duration * 60;
+  
+  while (totalMinutes < (startHour * 60 + startMin) + durationMinutes) {
+    const h = Math.floor(totalMinutes / 60);
+    const m = totalMinutes % 60;
+    const slot = `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
+    
+    if (allHours.includes(slot)) {
+      slots.push(slot);
+    }
+    totalMinutes += 60;
+  }
+  
+  return slots;
+}
+
+function isSlotAvailable(time, date, duration) {
+  const occupied = busySlots[date] || [];
+  if (occupied.includes(time)) return false;
+  
+  const slotsToBlock = getSlotsToBlock(time, duration);
+  for (let slot of slotsToBlock) {
+    if (occupied.includes(slot)) return false;
+  }
+  
+  return true;
+}
+
+function renderHours(){
+  const currentDate = dateInput.value;
+  if (!currentDate) {
+    hoursContainer.innerHTML = "<div style='grid-column:1/-1; text-align:center; padding:20px; color:#888;'>Selecione uma data</div>";
+    updateConfirmButton();
+    return;
+  }
+  
+  selectedHour = "";
+  hoursContainer.innerHTML = "";
+  
+  allHours.forEach(h => {
+    const div = document.createElement("div");
+    div.className = "hour";
+    div.innerText = h;
+    
+    if (selectedDuration > 0 && isSlotAvailable(h, currentDate, selectedDuration)) {
+      div.onclick = () => selectHour(div, h);
+    } else {
+      div.classList.add("busy");
+    }
+    
+    hoursContainer.appendChild(div);
+  });
+  
+  updateConfirmButton();
+}
+
+function selectHour(el,h){
+  document.querySelectorAll(".hour").forEach(e=>e.classList.remove("active"));
+  el.classList.add("active");
+  selectedHour = h;
+  updateConfirmButton();
+}
+
+function updateConfirmButton(){
+  const date = dateInput.value;
+  confirmBtn.disabled = !(selectedService && date && selectedHour);
+}
+
+dateInput.addEventListener('change', function() {
+  selectedDate = this.value;
+  selectedHour = "";
+  document.querySelectorAll(".hour").forEach(e=>e.classList.remove("active"));
+  renderHours();
+});
+
+function confirmBooking(){
+  document.getElementById("confirmBtn").style.display = "none";
+  document.getElementById("successMessage").style.display = "block";
+  
+  setTimeout(() => {
+    location.reload();
+  }, 3000);
+}
+
+renderHours();
+</script>
+
+</body>
+</html>
